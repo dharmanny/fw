@@ -10,11 +10,11 @@ class KeywordFilesInitTest(ut.TestCase):
         self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'keywords')
         self.kw_dir = Path(*Path(__file__).parts[0:-4], 'keywords')
         for d in os.listdir(self.resource_dir):
-            shutil.copytree(Path(self.resource_dir, d), self.kw_dir)
+            shutil.copytree(Path(self.resource_dir, d), Path(self.kw_dir, d))
 
     def tearDown(self):
         for d in os.listdir(self.resource_dir):
-            shutil.rmtree(Path(self.resource_dir, d), self.kw_dir)
+            shutil.rmtree(Path(self.kw_dir, d))
 
     def test_positive(self):
         self.assertIn('test_case_1', self.kwf.kw_names, 'test_case_1 should be in the keyword names')
