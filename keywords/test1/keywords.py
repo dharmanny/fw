@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 class Keywords:
     def test_1(self, fw):
@@ -8,7 +8,9 @@ class Keywords:
 class Config:
     @staticmethod
     def test_1():
-        return {'mandatory_variables': ['MP', 'MP2'],
+        """ This is a dummy keyword """
+        mandatory = ['var2', 'var3']
+        return {'mandatory_variables': mandatory,
                 'iterable': 'R'}
 
 

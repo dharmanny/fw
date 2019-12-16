@@ -11,3 +11,6 @@ class Framework:
         self.env = initiator.load_environment(env)
         data.DataLoader(self).add_settings(settings, init=True)
         fw_log.set_logging(self.fw_settings)
+
+    def get_keyword_names(self):
+        pass

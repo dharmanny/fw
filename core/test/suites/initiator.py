@@ -8,7 +8,7 @@ from fw.core.initiator import FrameworkInitiator as fi
 class GetEnvModNameTest(ut.TestCase):
     def setUp(self):
         self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'initiator')
-        self.env_dir = Path(*Path(__file__).parts[0:-4], 'Env')
+        self.env_dir = Path(*Path(__file__).parts[0:-4], 'env')
         self.env_files = [f for f in os.listdir(self.resource_dir)]
         self.fi = fi()
         for file in self.env_files:
