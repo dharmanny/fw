@@ -1,0 +1,3 @@
+TEST_VAR_INT = 1
+TEST_VAR_BOOL = True
+TEST_VAR_STR = 'Test'
