@@ -1,12 +1,12 @@
 import unittest as ut
-import Fw
-import Fw.Core.data_loader as dl
+from fw import Framework
+import fw.core.data as dl
 import pandas as pd
 
 
 class AddSettingsTests(ut.TestCase):
     def setUp(self):
-        fw = Fw.Framework(**{'--LOG_LEVEL': None})
+        fw = Framework(**{'--LOG_LEVEL': None})
         fw.test_settings = pd.Series({'INIT': True})
         self.fw = fw
         self.dl = dl.DataLoader(self.fw)

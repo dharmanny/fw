@@ -1,5 +1,5 @@
 import pandas as pd
-import Fw.Core.logging as lg
+import fw.core.logging as lg
 import logging
 import unittest as ut
 import os
@@ -7,7 +7,7 @@ from pathlib import Path
 
 class SetLogginTest(ut.TestCase):
     def setUp(self):
-        self.temp_dir = Path(*Path(__file__).parts[0:-2], 'TempResults')
+        self.temp_dir = Path(*Path(__file__).parts[0:-2], 'temp')
         self.settings = pd.Series({'LOG_LOC': self.temp_dir,
                                    'LOG_LEVEL': None,
                                    'LOG_NAME': 'test.log'})

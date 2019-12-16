@@ -2,12 +2,12 @@ import unittest as ut
 from pathlib import Path
 import os
 import shutil
-from Fw import Framework
+from fw import Framework
 
 class InitTest(ut.TestCase):
     def setUp(self):
-        self.resource_dir = Path(*Path(__file__).parts[0:-2], 'TestResources', 'fw_init')
-        self.env_dir = Path(*Path(__file__).parts[0:-4], 'Env')
+        self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'fwinit')
+        self.env_dir = Path(*Path(__file__).parts[0:-4], 'env')
         self.env_files = [f for f in os.listdir(self.resource_dir)]
         for file in self.env_files:
             shutil.copy(Path(self.resource_dir, file), Path(self.env_dir, file))

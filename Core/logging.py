@@ -19,7 +19,7 @@ def set_logging(settings):
     try:
         name = settings.LOG_NAME
     except AttributeError:
-        name = 'fw_logging.txt'
+        name = 'fw_logging.log'
 
     if level is not None:
         logging.basicConfig(filename=Path(log_loc, name),

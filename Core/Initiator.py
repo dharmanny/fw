@@ -1,8 +1,9 @@
-import Fw.settings as sets
+import fw.settings as sets
 import pandas as pd
 import os
 import importlib
 from pathlib import Path
+
 
 class FrameworkInitiator:
 
@@ -11,7 +12,7 @@ class FrameworkInitiator:
         for e in env_files:
             e = e.replace('.py', '')
             if env.lower() == e.lower():
-                return 'Fw.Env.{env}'.format(env=e)
+                return 'fw.env.{env}'.format(env=e)
 
         env_li = [e.replace('.py', '').lower() for e in env_files]
         raise ImportError('The indicated environment ("{env}") is not a valid environment. '
@@ -21,7 +22,7 @@ class FrameworkInitiator:
 
     @staticmethod
     def _get_env_files():
-        env_dir = Path(*Path(sets.__file__).parts[:-1], 'Env')
+        env_dir = Path(*Path(sets.__file__).parts[:-1], 'env')
         return [f for f in os.listdir(env_dir) if (f[0] != '_') and ('.py' in f)]
 
     @staticmethod

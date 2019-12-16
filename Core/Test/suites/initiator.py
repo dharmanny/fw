@@ -2,12 +2,12 @@ import unittest as ut
 from pathlib import Path
 import os
 import shutil
-from Fw.Core.Initiator import FrameworkInitiator as fi
+from fw.core.initiator import FrameworkInitiator as fi
 
 
 class GetEnvModNameTest(ut.TestCase):
     def setUp(self):
-        self.resource_dir = Path(*Path(__file__).parts[0:-2], 'TestResources', 'initiator')
+        self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'initiator')
         self.env_dir = Path(*Path(__file__).parts[0:-4], 'Env')
         self.env_files = [f for f in os.listdir(self.resource_dir)]
         self.fi = fi()
@@ -16,7 +16,7 @@ class GetEnvModNameTest(ut.TestCase):
 
     def test_positive(self):
         mod = self.fi._get_env_mod_name('Test_Env_1', self.env_files)
-        self.assertEqual(mod, 'Fw.Env.Test_Env_1', 'The module name should have been returned.')
+        self.assertEqual(mod, 'fw.env.Test_Env_1', 'The module name should have been returned.')
 
     def test_negative(self):
         with self.assertRaises(ImportError):
