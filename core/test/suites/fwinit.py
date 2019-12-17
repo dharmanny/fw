@@ -11,7 +11,15 @@ class InitTest(ut.TestCase):
         self.env_dir = Path(*Path(__file__).parts[0:-4], 'env')
         self.env_files = [f for f in os.listdir(self.resource_dir)]
         for file in self.env_files:
-            shutil.copy(Path(self.resource_dir, file), Path(self.env_dir, file))
+            fp = Path(self.resource_dir, file)
+            if os.path.isfile(fp):
+                shutil.copy(fp, Path(self.env_dir, file))
+
+    def tearDown(self):
+        for file in self.env_files:
+            fp = Path(self.env_dir, file)
+            if os.path.isfile(fp):
+                os.remove(fp)
 
     def test_no_args(self):
         Framework()
@@ -39,12 +47,16 @@ class GetKeywordNamesTest(ut.TestCase):
         self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'fwinit')
         self.kw_dir = Path(*Path(__file__).parts[0:-4], 'keywords')
         for d in os.listdir(self.resource_dir):
-            shutil.copytree(Path(self.resource_dir, d), Path(self.kw_dir, d))
+            dr = Path(self.resource_dir, d)
+            if os.path.isdir(dr):
+                shutil.copytree(dr, Path(self.kw_dir, d))
         self.fwo = Framework()
 
     def tearDown(self):
         for d in os.listdir(self.resource_dir):
-            shutil.rmtree(Path(self.kw_dir, d))
+            dr = Path(self.resource_dir, d)
+            if os.path.isdir(dr):
+                shutil.rmtree(Path(self.kw_dir, d))
 
     def test_keyword_present(self):
         self.assertIn('test_case_1', self.fwo.get_keyword_names(), 'Keyword should be present')
