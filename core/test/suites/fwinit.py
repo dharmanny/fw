@@ -4,6 +4,7 @@ import os
 import shutil
 from fw import Framework
 
+
 class InitTest(ut.TestCase):
     def setUp(self):
         self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'fwinit')
@@ -32,3 +33,18 @@ class InitTest(ut.TestCase):
         self.assertEqual('Test', fw.env.TEST_VAR_STR, 'Should be an environment variable.')
         self.assertEqual('Test_Env_1', fw.env.ENV_NAME, 'Should be an environment variable.')
 
+
+class GetKeywordNamesTest(ut.TestCase):
+    def setUp(self):
+        self.resource_dir = Path(*Path(__file__).parts[0:-2], 'resources', 'fwinit')
+        self.kw_dir = Path(*Path(__file__).parts[0:-4], 'keywords')
+        for d in os.listdir(self.resource_dir):
+            shutil.copytree(Path(self.resource_dir, d), Path(self.kw_dir, d))
+        self.fwo = Framework()
+
+    def tearDown(self):
+        for d in os.listdir(self.resource_dir):
+            shutil.rmtree(Path(self.kw_dir, d))
+
+    def test_keyword_present(self):
+        self.assertIn('test_case_1', self.fwo.get_keyword_names(), 'Keyword should be present')

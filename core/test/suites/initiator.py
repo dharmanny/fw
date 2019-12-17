@@ -26,9 +26,13 @@ class GetEnvModNameTest(ut.TestCase):
         for file in os.listdir(self.resource_dir):
             os.remove(Path(self.env_dir, file))
 
+
 class GetEnvFilesTest(ut.TestCase):
     def setUp(self):
         GetEnvModNameTest.setUp(self)
+
+    def tearDown(self):
+        GetEnvModNameTest.tearDown(self)
 
     def test_positive(self):
         valid_envs = [f for f in self.env_files if (f[0] != '_') and ('.py' in f)]
@@ -43,6 +47,9 @@ class GetEnvFilesTest(ut.TestCase):
 class LoadEnvironmentTests(ut.TestCase):
     def setUp(self):
         GetEnvModNameTest.setUp(self)
+
+    def tearDown(self):
+        GetEnvModNameTest.tearDown(self)
 
     def test_get_supplied_env(self):
         act = self.fi.load_environment('Test_Env_1')
