@@ -3,19 +3,25 @@ import re
 import fw.core.keyword as kw
 import pandas as pd
 
-
 class DataLoader:
-    def __init__(self, fw):
-        self._fw = fw
+    def __init__(self, fwo):
+        self._fw = fwo
+        self._eval_ind = fwo.fw_settings.EVAL_INDICATOR
+        self._eval_len = len(self._eval_ind)
 
-    def _add_args_to_kwargs(self, name, args, kwargs):
+    @staticmethod
+    def _add_args_to_kwargs(name, args, kwargs):
         if len(args) == 0:
             return kwargs
         vrs = []
         # identify arguments indicated in the name (e.g. 'do_${arg1}_to_${arg2}') and add to vrs.
         vrs.extend([re.findall('\w+', x)[0].lower() for x in re.findall('\${\w+}', name)])
         try:
-            vrs.extend(kw.KeywordArgs().get_mandatory_args(name))
+            man_vars = kw.KeywordArgs().get_mandatory_args(name)
+            for name_var, man_var in zip(vrs, tuple(man_vars)):
+                if name_var.upper() == man_var.upper():
+                    man_vars.remove(man_var)
+            vrs.extend(man_vars)
         except AssertionError:
             pass
         if len(args) > len(vrs):
@@ -31,15 +37,27 @@ class DataLoader:
             kwargs[vr] = arg
         return kwargs
 
-    def _combine_data_object_and_file_data(self, data, file_data):
-        return file_data
+    @staticmethod
+    def _combine_data_object_and_file_data(data, file_data):
+        if file_data is None:
+            return data
+        else:
+            return file_data
+
+    @staticmethod
+    def _reduce_rows(data, rows):
+        if rows is None:
+            return data
+        rows = str(rows)
+        rows_int = map(int, rows.split(', '))
+        return data.iloc[rows_int]
 
     def _extract_data(self, kwargs):
         data = kwargs.get('DATA')
-        if not data:
+        if data is not None:
             kwargs.pop('DATA')
         data_file = kwargs.get('DATA_FILE')
-        if not data_file:
+        if data_file is not None:
             kwargs.pop('DATA_FILE')
             try:
                 file_data = self.load_csv(data_file)
@@ -57,28 +75,63 @@ class DataLoader:
             result = data
         return result, kwargs
 
-    def _reduce_rows(self, data, rows):
-        if rows is None:
-            return data
-        rows = str(rows)
-        rows_int = map(int, rows.split(', '))
-        return data.iloc[rows_int]
+    def _eval_needed(self, val):
+        if not isinstance(val, str):
+            return False
+        if val[0:self._eval_len] != self._eval_ind:
+            return False
+        return True
+
+    def _evaluate_data(self, data):
+        """
+        This function will resolve all evaluation statements in the data frame
+        """
+        context = {}
+
+        def per_cell(val, row):
+            if self._eval_needed(val) is True:
+                return self._evaluate_cell(val, row, context)
+            else:
+                return val
+
+        def per_row(row):
+            return row.apply(per_cell, row=row)
+
+        eval_rows = data.applymap(self._eval_needed).apply(any, axis=1)
+        data.loc[eval_rows] = data.loc[eval_rows].apply(per_row, axis=1)
+        return data
+
+    def _evaluate_cell(self, val, row, context):
+        """
+        This function can be used to evaluate a cell (when a function is passed to be resolved at runtime)
+        """
+        if not self._eval_needed(val):
+            return val
+        val = val.replace(self._eval_ind, '')
+
+        try:
+            result = eval(val, context)
+        except NameError as e:
+            missing = e.args[0].split("'")[1]
+            try:
+                context[missing] = self._evaluate_cell(row[missing], row, context)
+                result = eval(val, context)
+            except KeyError:
+                raise e
+        return result
 
     def load_csv(self, filename, **options):
-        options['sep'] = options.get('sep', self._fw.SETTINGS.CSV_SEPERATOR)
+        options['sep'] = options.get('sep', self._fw.fw_settings.CSV_SEP)
         options['header'] = options.get('header', 0)
-        options['dtype'] = options.get('dtype', 0)
+        options['dtype'] = options.get('dtype', str)
         file_data = pd.read_csv(filename, **options)
         return file_data
 
     def load_json(self, filename, **options):
-        return filename
+        raise ImportError('Json files not supported yet.')
 
     def load_excel(self, filename, **options):
-        return filename
-
-    def evaluate(self, data):
-        return data
+        raise ImportError('Excel files not supported yet.')
 
     def get_data(self, name, *args, **kwargs):
         kwargs = self._add_args_to_kwargs(name, args, kwargs)
@@ -93,7 +146,7 @@ class DataLoader:
             kwargs = {k: [v] for k, v in kwargs.items()}
             data = pd.DataFrame(kwargs)
         if data is not None:
-            data = self.evaluate(data)
+            data = self._evaluate_data(data)
         return data
 
     def add_settings(self, kwargs, init=False):
