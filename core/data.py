@@ -2,6 +2,9 @@ import logging
 import re
 import fw.core.keyword as kw
 import pandas as pd
+from .datetime import DateParser
+import copy
+import datetime as dt
 
 class DataLoader:
     def __init__(self, fwo):
@@ -45,12 +48,26 @@ class DataLoader:
             return file_data
 
     @staticmethod
-    def _reduce_rows(data, rows):
+    def _transform_read_datetime(val):
+        if not isinstance(val, str):
+            return val
+        try:
+            return dt.datetime.strptime(val, '%Y-%m-%d %H:%M:%S%z')
+        except ValueError:
+            return val
+
+    def _reduce_rows(self, data, rows):
         if rows is None:
             return data
         rows = str(rows)
-        rows_int = map(int, rows.split(', '))
-        return data.iloc[rows_int]
+        if rows[0:self._eval_len] == self._eval_ind:
+            context = {}
+            fltr = data.apply(lambda r: self._evaluate_cell(rows, r, context), axis=1)
+            data = data[fltr]
+        elif rows is not None or rows.upper() not in ('ALL', 'NONE'):
+            rows_int = [int(x) - 1 for x in rows.split(',')]
+            data = data.loc[rows_int]
+        return data
 
     def _extract_data(self, kwargs):
         data = kwargs.get('DATA')
@@ -70,6 +87,7 @@ class DataLoader:
                     except ImportError:
                         raise ImportError('Data file was not recognized as a valid data file '
                                           '(csv, json or excel file).')
+            file_data = file_data.applymap(self._transform_read_datetime)
             result = self._combine_data_object_and_file_data(data, file_data)
         else:
             result = data
@@ -83,42 +101,39 @@ class DataLoader:
         return True
 
     def _evaluate_data(self, data):
-        """
-        This function will resolve all evaluation statements in the data frame
-        """
-        context = {}
+        context_clean = {}
 
-        def per_cell(val, row):
+        def per_cell(val, row, context):
             if self._eval_needed(val) is True:
                 return self._evaluate_cell(val, row, context)
             else:
                 return val
 
         def per_row(row):
-            return row.apply(per_cell, row=row)
+            context_row = copy.deepcopy(context_clean)
+            return row.apply(per_cell, row=row, context=context_row)
 
         eval_rows = data.applymap(self._eval_needed).apply(any, axis=1)
         data.loc[eval_rows] = data.loc[eval_rows].apply(per_row, axis=1)
         return data
 
-    def _evaluate_cell(self, val, row, context):
-        """
-        This function can be used to evaluate a cell (when a function is passed to be resolved at runtime)
-        """
-        if not self._eval_needed(val):
-            return val
-        val = val.replace(self._eval_ind, '')
-
+    def _eval_till_error(self, val, row, context):
         try:
             result = eval(val, context)
         except NameError as e:
-            missing = e.args[0].split("'")[1]
             try:
+                missing = e.args[0].split("'")[1]
                 context[missing] = self._evaluate_cell(row[missing], row, context)
-                result = eval(val, context)
+                result = self._eval_till_error(val, row, context)
             except KeyError:
                 raise e
         return result
+
+    def _evaluate_cell(self, val, row, context):
+        if not self._eval_needed(val):
+            return val
+        val = val.replace(self._eval_ind, '')
+        return self._eval_till_error(val, row, context)
 
     def load_csv(self, filename, **options):
         options['sep'] = options.get('sep', self._fw.fw_settings.CSV_SEP)
@@ -128,12 +143,12 @@ class DataLoader:
         return file_data
 
     def load_json(self, filename, **options):
-        raise ImportError('Json files not supported yet.')
+        raise TypeError('Json files not supported yet.')
 
     def load_excel(self, filename, **options):
-        raise ImportError('Excel files not supported yet.')
+        raise TypeError('Excel files not supported yet.')
 
-    def get_data(self, name, *args, **kwargs):
+    def get_data(self, name=None, *args, **kwargs):
         kwargs = self._add_args_to_kwargs(name, args, kwargs)
         kwargs = {k.upper(): v for k, v in kwargs.items()}
         kwargs = self.add_settings(kwargs)
@@ -146,6 +161,8 @@ class DataLoader:
             kwargs = {k: [v] for k, v in kwargs.items()}
             data = pd.DataFrame(kwargs)
         if data is not None:
+            dp = DateParser()
+            data = data.applymap(dp.make_date_or_return)
             data = self._evaluate_data(data)
         return data
 
