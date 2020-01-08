@@ -27,7 +27,7 @@ class FrameworkInitiator:
 
     @staticmethod
     def load_settings_file():
-        set_dict = {s: getattr(sets, s) for s in dir(sets) if s[0] != '_'}
+        set_dict = {s.upper(): getattr(sets, s) for s in dir(sets) if s[0] != '_'}
         return pd.Series(set_dict)
 
     def load_environment(self, env):
@@ -40,10 +40,3 @@ class FrameworkInitiator:
             env_dict = {}
         env_dict['ENV_NAME'] = env
         return pd.Series(env_dict)
-
-
-
-
-
-
-

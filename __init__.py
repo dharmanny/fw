@@ -3,12 +3,14 @@ from . import settings as s
 import fw.core.initiator as init
 import fw.core.data as dat
 import fw.core.keyword as kw
+from pathlib import Path
 
 class Framework:
     def __init__(self, env=None, **settings):
         initiator = init.FrameworkInitiator()
         self.fw_settings = initiator.load_settings_file()
         self.env = initiator.load_environment(env)
+        self.fw_dir = Path(*Path(__file__).parts[0:-1])
         dat.DataLoader(self).add_settings(settings, init=True)
         fw_log.set_logging(self.fw_settings)
 
