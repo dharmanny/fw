@@ -2,6 +2,7 @@ import pandas as pd
 
 class Keywords:
     def test_1(self, fw):
+        """Stuff this keyword does"""
         pass
 
 
