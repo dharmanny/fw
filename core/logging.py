@@ -21,7 +21,9 @@ def set_logging(settings):
     except AttributeError:
         name = 'fw_logging.log'
 
+
     if level is not None:
+        logging.getLogger().handlers = []                       # reset any possible configurations
         logging.basicConfig(filename=Path(log_loc, name),
                             filemode='a+',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s \t %(message)s',

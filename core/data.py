@@ -3,8 +3,10 @@ import re
 import fw.core.keyword as kw
 import pandas as pd
 from .datetime import DateParser
+from .utilities import Util
 import copy
 import datetime as dt
+
 
 class DataLoader:
     def __init__(self, fwo):
@@ -17,10 +19,11 @@ class DataLoader:
         if len(args) == 0:
             return kwargs
         vrs = []
+
         # identify arguments indicated in the name (e.g. 'do_${arg1}_to_${arg2}') and add to vrs.
         vrs.extend([re.findall('\w+', x)[0].lower() for x in re.findall('\${\w+}', name)])
         try:
-            man_vars = kw.KeywordArgs().get_mandatory_args(name)
+            man_vars = kw.KeywordInfo().get_keyword_arguments(name, False)
             for name_var, man_var in zip(vrs, tuple(man_vars)):
                 if name_var.upper() == man_var.upper():
                     man_vars.remove(man_var)
@@ -135,6 +138,14 @@ class DataLoader:
         val = val.replace(self._eval_ind, '')
         return self._eval_till_error(val, row, context)
 
+    def _add_settings(self, kwargs, init=False):
+        fw_sets = self._fw.fw_settings
+        test_sets = self._fw.test_settings if self._fw.test_settings else {}
+        fw_sets, test_sets, kwargs = Util.add_settings(fw_sets, test_sets, kwargs, init)
+        self._fw.fw_settings = fw_sets
+        self._fw.test_settings = test_sets
+        return kwargs
+
     def load_csv(self, filename, **options):
         options['sep'] = options.get('sep', self._fw.fw_settings.CSV_SEP)
         options['header'] = options.get('header', 0)
@@ -151,7 +162,8 @@ class DataLoader:
     def get_data(self, name=None, *args, **kwargs):
         kwargs = self._add_args_to_kwargs(name, args, kwargs)
         kwargs = {k.upper(): v for k, v in kwargs.items()}
-        kwargs = self.add_settings(kwargs)
+
+        kwargs = self._add_settings(kwargs)
         rows = kwargs.get('ROWS')
         data, kwargs = self._extract_data(kwargs)
         if data is not None:
@@ -166,23 +178,82 @@ class DataLoader:
             data = self._evaluate_data(data)
         return data
 
-    def add_settings(self, kwargs, init=False):
-        fw_sets = {k: v for k, v in kwargs.items() if k[0:2] == '--'}
-        for st, val in fw_sets.items():
-            kwargs.pop(st)
-            self._fw.fw_settings[st.upper()[2:]] = val
-            logging.info('Added fw_setting "{s}" with value "{v}"'.format(s=st, v=val))
+    def validate_data(self, data, name: str):
+        man_vars = kw.KeywordInfo().get_mandatory_arguments(name)
+        missing = []
+        cols = DataLibrary().get_cols(data)
+        for var in man_vars:
+            if var not in cols:
+                missing.append(var)
+        if len(missing) != 0:
+            raise ImportError('Not all mandatory variables where passed ("{}", is/are missing).'
+                              .format('","'.join(missing)))
 
-        test_sets = {k: v for k, v in kwargs.items() if k[0] == '-'}
-        if not init:
-            for st, val in test_sets.items():
-                kwargs.pop(st)
-                self._fw.test_settings[st.upper()[1:]] = val
-                logging.info('Added test_setting "{s}" with value "{v}"'.format(s=st, v=val))
-        elif len(test_sets) > 0:
-            msg = 'Test variables were imported during initiation of the Framework. This is not supported'
-            logging.error(msg)
-            raise AssertionError(msg)
-        for k, v in kwargs.items():
-            logging.debug('Returned variable to calles:"{k}", "{v}".'.format(k=k, v=v))
-        return kwargs
+
+class DataLibrary:
+    def __init__(self, fwo):
+        self._fwo = fwo
+
+    def _safe_assign_df(self, data, **kwargs):
+        edit_cols = tuple(set(data.columns) & set(kwargs.keys()))
+        new_cols = {col: val for col, val in kwargs.items() if col not in edit_cols}
+        data = data.assign(**new_cols)
+
+        def_spec = self._fwo.fw_settings.DEFAULT_SPECIFIER
+        for col in edit_cols:
+            if def_spec in data[col].to_list():
+                new_data = data[[col]].assign(**{col: kwargs.get(col)})
+                new_list = []
+                for old, new in zip(data[col], new_data[col]):
+                    if old == def_spec:
+                        new_list.append(new)
+                    else:
+                        new_list.append(old)
+                data = data.assign(**{col: new_list})
+        return data
+
+    def _safe_assign_series(self, data, **kwargs):
+        edit_cols = tuple(set(data.index) & set(kwargs.keys()))
+        new_cols = {col: val for col, val in kwargs.items() if col not in edit_cols}
+        data = data.append(pd.Series(new_cols))
+        def_spec = self._fwo.fw_settings.DEFAULT_SPECIFIER
+        for col in edit_cols:
+            if def_spec == data[col]:
+                data[col] = kwargs.get(col)
+        return data
+
+    def _use_default_data(self, data):
+        if data is None:
+            try:
+                data = self._fwo.DATA
+            except AttributeError:
+                raise ImportError('No data was passed, and no data was present in the framework object either.')
+        return data
+
+    def safe_assign(self, data=None, **kwargs):
+        data = self._use_default_data(data)
+        if isinstance(data, pd.DataFrame):
+            result = self._safe_assign_df(data, **kwargs)
+        elif isinstance(data, pd.Series):
+            result = self._safe_assign_series(data, **kwargs)
+        elif data is None:
+            if kwargs != {}:
+                result = pd.DataFrame.from_dict(kwargs)
+            else:
+                result = data
+        else:
+            raise TypeError('The given type of data - "{}" - is not supported, '
+                            'only pandas.DataFrames and pandas.Series are supported.'
+                            .format(data.__class__))
+        return result
+
+    def get_cols(self, data=None):
+        data = self._use_default_data(data)
+        if isinstance(data, pd.DataFrame):
+            return data.columns
+        elif isinstance(data, pd.Series):
+            return data.index
+        elif data is None:
+            return []
+        else:
+            raise TypeError('Data is of non-supported type: "{}".'.format(data.__class__))

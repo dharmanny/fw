@@ -1,5 +1,5 @@
-# import fw.settings as sets
 from fw.core.datetime import DateParser
+from fw.core.data import DataLibrary
 
 
 class LibBuilder:
@@ -8,5 +8,7 @@ class LibBuilder:
         return []
 
 
-class Library(DateParser, *LibBuilder().get_lib_classes()):
+class Library(DateParser,
+              DataLibrary,
+              *LibBuilder().get_lib_classes()):
     pass

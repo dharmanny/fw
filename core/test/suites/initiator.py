@@ -2,7 +2,7 @@ import unittest as ut
 from pathlib import Path
 import os
 import shutil
-from fw.core.initiator import FrameworkInitiator as fi
+from fw.core.utilities import FrameworkInitiator as fi
 
 
 class GetEnvModNameTest(ut.TestCase):
