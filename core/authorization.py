@@ -9,15 +9,19 @@ class NoKeyVault:
 
 
 class KeePass:
-    def __init__(self, fwo, db_file=None, key=None, pw=None, transformed_key=None):
-        if db_file is not None:
-            logging.debug('A keyfile was passed as authorization mehtod for Keepass.')
-            self._kp = PyKeePass(db_file, password=pw, keyfile=key, transformed_key=transformed_key)
+    def __init__(self, fwo):
+        kdbx = fwo.fw_settings.KEEPASS_DB_FILE
+        key = fwo.fw_settings.KEEPASS_KEY
+
+        if kdbx is not None:
+            logging.debug('A keyfile was passed as authorization method for Keepass.')
+            self._kp = PyKeePass(kdbx, keyfile=key, transformed_key=None)
         if fwo.env.ENV_NAME:
             self._env = fwo.env.ENV_NAME
         else:
             self._env = ('',)
-        logging.debug('Environment used for Keepass is: "{}"'.format('/'.join(self._env)))
+
+        logging.debug('Environment used for Keepass is: "{}"'.format('/'.join(map(str, self._env))))
 
     def _get_keypair(self, title, env=None):
         env = self._env if env is None else env
@@ -58,5 +62,5 @@ class KeyVaultPicker:
         return [kvs_cls]
 
 
-class KeyVault(*KeyVaultPicker().get_key_vault_class()):
+class Authorization(*KeyVaultPicker().get_key_vault_class()):
     pass

@@ -83,7 +83,7 @@ class PageObjectModelKeywords:
 
     def _get_all_modules(self):
         all_mods = []
-        for p in Util().settings().POM_MODULES:
+        for p in Util().settings().POM_DIRECTORY:
             folder_li = [p for p in re.split(r'[.]|/|\\', p) if p != 'fw']
             folder_path = Path(self._fw_dir, *folder_li)
             mods = [f[:-3] for f in os.listdir(folder_path) if f[0] != '_' and f[-3:] == '.py']

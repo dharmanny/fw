@@ -16,11 +16,11 @@ class fw:
         self.fw_settings, test_sets, settings = util.add_settings(self.fw_settings, {}, settings, init=True)
         self.fw_dir = util.fw_dir()
         self.env = environment.Env().load_environment_settings(util.parse_env(env))
-        logging.set_logging(self.fw_settings)
+        logging.Logging(self.fw_settings).set_logging()
 
-        self.auth = authorization.KeyVault(fwo=self, **settings)
+        self.auth = authorization.Authorization(self)
         self.lib = library.Library(self)
-        self.sut = sut.SystemInterfaces()
+        self.sut = sut.SystemInterfaces(self)
 
     def get_keyword_names(self):
         return keyword.KeywordInfo().get_qualified_keywords()
