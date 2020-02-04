@@ -53,10 +53,13 @@ class KeyVaultPicker:
     mapper = {'keepass': KeePass}
 
     def get_key_vault_class(self):
-        kvs = Util().settings().KEYVAULT_SYSTEM
+        try:
+            kvs = Util().settings().KEYVAULT_SYSTEM
+        except AttributeError:
+            kvs = 'none'
         logging.debug('The requested key vault system is {}'.format(kvs))
         kvs_cls = self.mapper.get(kvs.lower())
-        if kvs is None:
+        if kvs_cls is None:
             logging.warning('The indicated key vault system: "{}", is not supported.'.format(kvs))
             kvs_cls = NoKeyVault
         return [kvs_cls]
