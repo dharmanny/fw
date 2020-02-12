@@ -5,12 +5,12 @@ import logging
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from tzlocal import get_localzone
-from fw import utilities
+from .utilities import Util
 
 
 class DateParser:
     def __init__(self, *args):
-        order = utilities.Util().settings().DEFAULT_DATE_TIME_ORDER
+        order = Util().settings().DEFAULT_DATE_TIME_ORDER
         order = [x.lower() for x in order]
         assert len(order) == 6, 'The given order of datetime elements is incomplete (!= 6)'
 

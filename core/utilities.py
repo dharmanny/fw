@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 import logging
 
+
 class Util:
     @staticmethod
     def fw_dir():
@@ -12,9 +13,11 @@ class Util:
         import fw.settings as sets
         return {s.upper(): getattr(sets, s) for s in dir(sets) if s[0] != '_'}
 
-    def _yaml_settings(self):
+    def _yaml_settings(self, file=None):
         import yaml
-        with open(Path(self.fw_dir(), "settings.yaml"), 'r') as stream:
+        if file is None:
+            file = Path(self.fw_dir(), "settings.yaml")
+        with open(file, 'r') as stream:
             try:
                 set_dict = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
@@ -25,12 +28,23 @@ class Util:
                 set_dict[k] = tuple(v)
         return set_dict
 
+    def _get_default_settings(self):
+        default = self._yaml_settings(Path(self.fw_dir(), "core", "defaults.yaml"))
+        return default
+
     def settings(self):
         try:
             set_dict = self._yaml_settings()
         except FileNotFoundError:
             set_dict = self._python_settings()
-        return pd.Series(set_dict)
+        sets = pd.Series(set_dict)
+        def_sets = self._get_default_settings()
+
+        edit_cols = tuple(set(sets.index) & set(def_sets.keys()))
+        new_cols = {col: val for col, val in def_sets.items() if col not in edit_cols}
+        sets = sets.append(pd.Series(new_cols))
+
+        return sets
 
     @staticmethod
     def parse_env(env):
