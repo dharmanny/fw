@@ -9,7 +9,7 @@ from .utilities import Util
 
 
 class DateParser:
-    def __init__(self):
+    def __init__(self, *args):
         order = Util().settings().DEFAULT_DATE_TIME_ORDER
         order = [x.lower() for x in order]
         assert len(order) == 6, 'The given order of datetime elements is incomplete (!= 6)'
