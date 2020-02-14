@@ -9,7 +9,7 @@ from .utilities import Util
 
 
 class DateParser:
-    def __init__(self, *args):
+    def __init__(self):
         order = Util().settings().DEFAULT_DATE_TIME_ORDER
         order = [x.lower() for x in order]
         assert len(order) == 6, 'The given order of datetime elements is incomplete (!= 6)'
@@ -31,11 +31,11 @@ class DateParser:
             raise AssertionError('Both till date and through date are supplied. '
                                  'Supply only one of these')
         if through is None:
-            logging.log('Using till as stopdtime.')
+            logging.debug('Using till as stopdtime.')
             stop = till
             func = lambda start, stop: start < stop
         else:
-            logging.log('Using through as stopdtime.')
+            logging.debug('Using through as stopdtime.')
             stop = through
             func = lambda start, stop: start <= stop
         return func, stop
@@ -121,11 +121,15 @@ class DateParser:
         if not isinstance(stop_date, dt.datetime):
             stop_date = self.make_date(stop_date, tz_out)
 
-        date_range = []
         delta = relativedelta(**{unit: int(size)})
-        while func(from_date, stop_date):
-            date_range.append(from_date)
+        return self._date_range(func, from_date, stop_date, delta)
+
+    def _date_range(self, func, from_date, to_date, delta):
+        while func(from_date, to_date):
+            yield from_date
             from_date += delta
-        logging.info('Created a date range between {start} and {stop} with a total of {nr} values.'
-                     .format(start=from_date, stop=stop_date, nr=len(date_range)))
-        return date_range
+
+
+
+
+
