@@ -37,8 +37,11 @@ EXTENDED_KW_DIRECTORY:
     - keywords
 
 # About bare keywords
-BARE_KW_DIRECTORY:
-    - bare_keywords
+SLIM_KW_DIRECTORY:
+    - slim_keywords
+SLIM_DEFAULT_KW_PROPERTIES:
+    iterable: row
+
 
 # About pom keywords
 INCLUDE_POM: yes

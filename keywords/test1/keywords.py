@@ -1,9 +1,10 @@
 import pandas as pd
+from pathlib import Path
 
 class Keywords:
     def test_1(self, fw):
         """Stuff this keyword does"""
-        pass
+        print('blabla')
 
 
 class Config:
@@ -12,7 +13,7 @@ class Config:
         """ This is a dummy keyword """
         mandatory = ['var2', 'var3']
         return {'mandatory_variables': mandatory,
-                'iterable': 'R'}
+                'iterable': 'table'}
 
 
 class Data:

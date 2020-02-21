@@ -44,9 +44,9 @@ class KeywordNameConventions:
             raise ValueError('The indicated input name ({}) is not a valid option.'.format(in_name))
         return name
 
-    mapper = {r'(': '_BO_',
-              r')': '_BC_',
-              r' ': '_'}
+    mapper = {r'(': 'BO_',
+              r')': 'BC_',
+              r'_': '_'}
 
 
 class FileName:

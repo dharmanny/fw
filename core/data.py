@@ -183,7 +183,7 @@ class DataLoader:
     def validate_data(self, data, name: str):
         man_vars = kw.KeywordInfo().get_mandatory_arguments(name)
         missing = []
-        cols = DataLibrary().get_cols(data)
+        cols = DataLibrary(self._fw).get_cols(data)
         for var in man_vars:
             if var not in cols:
                 missing.append(var)

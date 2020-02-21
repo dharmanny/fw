@@ -6,6 +6,8 @@ import zipfile
 from pathlib import Path
 import os
 import shutil
+import pandas as pd
+import logging
 
 class Runner:
     def __init__(self, fwo):
@@ -21,11 +23,36 @@ class Runner:
 
     def run_kw(self, name, args, kwargs):
         fwo = self._fwo
+        if not hasattr(fwo, 'test_settings'):
+            fwo.test_settings = None
         fwo.DATA = DataLoader(fwo).get_data(name, *args, **kwargs)
         method_name = KeywordNameConventions().convert_name(name, in_name='keyword')
         DataLoader(fwo).validate_data(fwo.DATA, name)
         getattr(DataMethods(), method_name)(fwo)
-        getattr(KeywordMethods(), method_name)(fwo)
+        func = getattr(KeywordMethods(), method_name)
+        sets = getattr(ConfigMethods(), method_name)()
+        self.iterate_keyword(func, sets, fwo)
+
+    def iterate_keyword(self, func, sets, fwo):
+        iter = sets.get('iterable')
+        data = fwo.DATA
+        if iter.lower() not in ['row', 'table'] and len(fwo.DATA) > 1 and isinstance(data, pd.DataFrame):
+            logging.warning('Iterator method "{}" cannot handle multiple rows of data. Behaviour might be unexpected.')
+        if iter.lower() == 'table':
+            func(fwo)
+        else:
+            result = []
+            for row in range(len(data)):
+                fwo.DATA = data.iloc[0]
+                func(fwo)
+                result.append(fwo.DATA)
+            fwo.DATA = pd.DataFrame(result)
+
+
+
+
+
+
 
     def finish_test(self, test_name, evidence_loc):
         base_name = '{}.zip'.format(self._fwo.fw_settings.EVIDENCE_ARCHIVE_NAME)

@@ -11,4 +11,6 @@ class LibBuilder:
 class Library(DateParser,
               DataLibrary,
               *LibBuilder().get_lib_classes()):
-    pass
+    def __init__(self, fwo, *args):
+        DataLibrary.__init__(self, fwo)
+        DateParser.__init__(self, *args)
