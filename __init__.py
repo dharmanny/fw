@@ -1,6 +1,3 @@
-# een extra comment. Doet nu niets.
-#nog iets er bij
-
 from .core import utilities
 from .core import logging
 from .core import data
