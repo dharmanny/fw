@@ -1,6 +1,5 @@
 from .core import utilities
 from .core import logging
-from .core import data
 from .core import keyword
 from .core import library
 from .core import sut
