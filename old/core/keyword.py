@@ -24,12 +24,12 @@ class ExtendedKeywords:
         for kw_dir in self._kw_dirs:
             for d in os.listdir(kw_dir):
                 base_dir = Path(kw_dir, d)
-                if 'keywords.py' in os.listdir(base_dir):
-                    files.append(Path(base_dir, 'keywords.py'))
+                if 'keywords.p' in os.listdir(base_dir):
+                    files.append(Path(base_dir, 'keywords.p'))
                     base_mod = '.'.join(base_dir.parts[base_dir.parts.index('fw'):])
                     mods.append('{base_mod}.keywords'.format(base_mod=base_mod))
                 else:
-                    logging.debug('Directory "{}" does not contain a keywords.py file.'.format(d))
+                    logging.debug('Directory "{}" does not contain a keywords.p file.'.format(d))
         return files, mods
 
     @staticmethod
