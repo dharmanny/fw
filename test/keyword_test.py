@@ -31,7 +31,7 @@ class TestKeywordsBasic:
 
 class TestKeywordsDiscovery:
     def setup_method(self):
-        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'keywords.p')
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'keywords.py')
         self.locations = [locs]
         self.Keywords = kw.Keywords(self.locations)
         self.kw_names = self.Keywords.get_all_keywords()
@@ -58,21 +58,27 @@ class TestKeywordsDiscovery:
 
     def test_folder(self):
         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'sub_folder')
-        self.Keywords = kw.Keywords([locs])
-        kw_names = self.Keywords.get_all_keywords()
+        Keywords = kw.Keywords([locs])
+        kw_names = Keywords.get_all_keywords()
         error = '"sub_folder_keyword2" not found as keyword'
-        assert 'sub_folder_keyword2' in self.kw_names, error
+        assert 'sub_folder_keyword2' in kw_names, error
         error = '"sub_folder_keyword3" not found as keyword'
-        assert 'sub_folder_keyword3' in self.kw_names, error
+        assert 'sub_folder_keyword3' in kw_names, error
 
 
     def test_folder_recursively(self):
-        pass
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files')
+        Keywords = kw.Keywords([locs])
+        kw_names = Keywords.get_all_keywords()
+        error = '"sub_folder_keyword2" not found as keyword'
+        assert 'sub_folder_keyword2' in kw_names, error
+        error = '"new_keyword" not found as keyword'
+        assert 'new_keyword' in kw_names, error
 
 
 # class TestKeywordsFaults:
 #     def setup_method(self):
-#         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_fault_files', 'sub_folder', 'keywords.p')
+#         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_fault_files', 'keywords.p')
 #         self.locations = [locs, 'invalid']
 #         self.Keywords = kw.Keywords(self.locations)
 #         self.kw_names = self.Keywords.get_all_keywords()

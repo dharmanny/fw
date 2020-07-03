@@ -16,7 +16,10 @@ class Keywords:
             if pathlib.Path.is_file(loc):
                 files = [loc]
             elif pathlib.Path.is_dir(loc):
-                files = [pathlib.Path(loc, f) for f in os.listdir(loc)]
+                files = list()
+                for path, subdirs, file_list in os.walk(loc):
+                    for name in file_list:
+                        files.append(pathlib.Path(path, name))
             else:
                 continue
             for file in files:
