@@ -1,5 +1,5 @@
 # import unittest as ut
-import fw.old.core.datetime as fw_dt
+import fw.core.datetime as fw_dt
 
 
 # class MakeDateTests(ut.TestCase):

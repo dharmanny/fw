@@ -5,12 +5,12 @@ import logging
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from tzlocal import get_localzone
-from .utilities import Util
+import fw.core.settings as sets
 
 
 class DateParser:
-    def __init__(self, *args):
-        order = Util().settings().DEFAULT_DATE_TIME_ORDER
+    def __init__(self):
+        order = sets.DEFAULT_DATE_TIME_ORDER
         order = [x.lower() for x in order]
         assert len(order) == 6, 'The given order of datetime elements is incomplete (!= 6)'
 
@@ -128,8 +128,3 @@ class DateParser:
         while func(from_date, to_date):
             yield from_date
             from_date += delta
-
-
-
-
-

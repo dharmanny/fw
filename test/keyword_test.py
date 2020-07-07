@@ -1,11 +1,12 @@
 import fw.core.keyword as kw
+import fw.core.settings as sets
 from pathlib import Path
 
 class TestKeywordsBasic:
     def setup_method(self):
         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'stub.py')
-        self.locations = [locs]
-        self.Keywords = kw.Keywords(self.locations)
+        sets.LOCATIONS = [locs]
+        self.Keywords = kw.Keywords()
 
     def test_all_keywords_type(self):
         error = "Mandatory fields should be returned in a list."
@@ -32,8 +33,8 @@ class TestKeywordsBasic:
 class TestKeywordsDiscovery:
     def setup_method(self):
         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'keywords.py')
-        self.locations = [locs]
-        self.Keywords = kw.Keywords(self.locations)
+        sets.LOCATIONS = [locs]
+        self.Keywords = kw.Keywords()
         self.kw_names = self.Keywords.get_all_keywords()
 
     def test_function_keyword(self):
@@ -58,27 +59,21 @@ class TestKeywordsDiscovery:
 
     def test_folder(self):
         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'sub_folder')
-        Keywords = kw.Keywords([locs])
-        kw_names = Keywords.get_all_keywords()
+        sets.LOCATIONS = [locs]
+        keywords = kw.Keywords()
+        kw_names = keywords.get_all_keywords()
         error = '"sub_folder_keyword2" not found as keyword'
         assert 'sub_folder_keyword2' in kw_names, error
         error = '"sub_folder_keyword3" not found as keyword'
         assert 'sub_folder_keyword3' in kw_names, error
 
-
     def test_folder_recursively(self):
         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files')
-        Keywords = kw.Keywords([locs])
-        kw_names = Keywords.get_all_keywords()
+        sets.LOCATIONS = [locs]
+        keywords = kw.Keywords()
+        kw_names = keywords.get_all_keywords()
         error = '"sub_folder_keyword2" not found as keyword'
         assert 'sub_folder_keyword2' in kw_names, error
         error = '"new_keyword" not found as keyword'
         assert 'new_keyword' in kw_names, error
 
-
-# class TestKeywordsFaults:
-#     def setup_method(self):
-#         locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_fault_files', 'keywords.p')
-#         self.locations = [locs, 'invalid']
-#         self.Keywords = kw.Keywords(self.locations)
-#         self.kw_names = self.Keywords.get_all_keywords()

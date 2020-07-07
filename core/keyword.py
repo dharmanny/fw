@@ -2,11 +2,12 @@ import os
 import pathlib
 import importlib
 import inspect
+import fw.core.settings as sets
 
 
 class Keywords:
-    def __init__(self, locations):
-        self.locs = locations
+    def __init__(self):
+        self.locs = sets.LOCATIONS
         self._discover_keyword()
 
     def _discover_keyword(self):
@@ -47,23 +48,45 @@ class Keywords:
         all_vars = func.__code__.co_varnames
         defaults = func.__defaults__
         if defaults:
-            mandatory = all_vars[:-len(defaults)]
+            mandatory = list(all_vars[:-len(defaults)])
             optional = {var: val for var, val in zip(all_vars[-len(defaults):], defaults)}
         else:
-            mandatory = all_vars
+            mandatory = list(all_vars)
             optional = {}
         return mandatory, optional
 
     def get_mandatory_fields(self, name: str):
         mandatory = self._get_variable_info(name)[0]
-        return list(mandatory)
+        if sets.CASE_SENSITIVE:
+            return mandatory
+        else:
+            return list(map(str.upper, mandatory))
 
     def get_optional_fields(self, name: str):
-        return self._get_variable_info(name)[1]
+        optional = self._get_variable_info(name)[1]
+        if sets.CASE_SENSITIVE:
+            return optional
+        else:
+            return {k.upper(): v for k, v in optional.items()}
 
     def get_conditional_fields(self, name: str):
         return {}
 
     def get_all_keywords(self):
         return list(self.kws.keys())
+
+    def return_data_case_sensitive(self, name, data):
+        old = data.columns
+        new = {}
+        variables, opt = self._get_variable_info(name)
+        variables.extend(opt.keys())
+        for col in old:
+            match = [v for v in variables if v.upper() == col.upper()]
+            if 0 < len(match) < 2:
+                new[col] = match[0]
+                continue
+        return data.rename(columns=new)
+
+
+
 
