@@ -4,7 +4,7 @@ from pathlib import Path
 
 class TestKeywordsBasic:
     def setup_method(self):
-        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'stub.py')
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_tests', 'keyword_files', 'stub.py')
         sets.LOCATIONS = [locs]
         self.Keywords = kw.Keywords()
 
@@ -32,7 +32,7 @@ class TestKeywordsBasic:
 
 class TestKeywordsDiscovery:
     def setup_method(self):
-        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'keywords.py')
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_tests', 'keyword_files', 'keywords.py')
         sets.LOCATIONS = [locs]
         self.Keywords = kw.Keywords()
         self.kw_names = self.Keywords.get_all_keywords()
@@ -58,7 +58,7 @@ class TestKeywordsDiscovery:
         assert 'x' not in self.kw_names, error
 
     def test_folder(self):
-        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files', 'sub_folder')
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_tests', 'keyword_files', 'sub_folder')
         sets.LOCATIONS = [locs]
         keywords = kw.Keywords()
         kw_names = keywords.get_all_keywords()
@@ -68,7 +68,7 @@ class TestKeywordsDiscovery:
         assert 'sub_folder_keyword3' in kw_names, error
 
     def test_folder_recursively(self):
-        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_files')
+        locs = Path(*Path(__file__).parts[:-1], 'resources', 'keyword_tests', 'keyword_files')
         sets.LOCATIONS = [locs]
         keywords = kw.Keywords()
         kw_names = keywords.get_all_keywords()

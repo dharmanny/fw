@@ -10,6 +10,9 @@ import fw.core.settings as sets
 class DataLoader:
     def __init__(self, keywords):
         self._kws = keywords
+        self._add_relevant_settings_to_self()
+
+    def _add_relevant_settings_to_self(self):
         self._eval_ind = sets.EVAL_INDICATOR
         self._eval_len = len(self._eval_ind)
 
@@ -19,7 +22,8 @@ class DataLoader:
         vrs = []
 
         # identify arguments indicated in the name (e.g. 'do_${arg1}_to_${arg2}') and add to vrs.
-        vrs.extend([re.findall('\w+', x)[0].lower() for x in re.findall('\${\w+}', name)])
+        # TODO: find a replacement for \w+
+        # vrs.extend([re.findall('\w+', x)[0].lower() for x in re.findall('\${\w+}', name)])
         try:
             man_vars = self._kws.get_mandatory_fields(name)
             for name_var, man_var in zip(vrs, tuple(man_vars)):
@@ -139,7 +143,6 @@ class DataLoader:
     def load_csv(self, filename, **options):
         options['sep'] = options.get('sep', sets.CSV_SEP)
         options['header'] = options.get('header', 0)
-        options['dtype'] = options.get('dtype', str)
         file_data = pd.read_csv(filename, **options)
         return file_data
 
@@ -153,7 +156,7 @@ class DataLoader:
         kwargs = self._add_args_to_kwargs(name, args, kwargs)
         kwargs = {k.upper(): v for k, v in kwargs.items()}
 
-        # kwargs = self._add_settings(kwargs)
+        kwargs = self._extract_and_add_settings(kwargs)
         rows = kwargs.get('ROWS')
         data, kwargs = self._extract_data(kwargs)
         if data is not None:
@@ -167,6 +170,15 @@ class DataLoader:
             data = data.applymap(dp.make_date_or_return)
             data = self._evaluate_data(data)
         return data
+
+    def _extract_and_add_settings(self, kwargs):
+        prefix = sets.SETTING_PREFIX
+        p_len = len(prefix)
+        setting_kwargs = {k[p_len:]: v for k, v in kwargs.items() if prefix == k[0:p_len]}
+        for key in setting_kwargs.keys():
+            kwargs.pop('{}{}'.format(prefix, key))
+        sets.update_settings(**setting_kwargs)
+        return kwargs
 
 
 def validate_data(data, mandatory, conditional):

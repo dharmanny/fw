@@ -7,6 +7,7 @@ class fw:
     def __init__(self, env=None, **settings):
         sets.update_settings(**settings)
         self.keywords = kw.Keywords()
+        self.data_loader = dat.DataLoader(self.keywords)
 
     def get_keyword_names(self):
         return self.keywords.get_all_keywords()
@@ -21,7 +22,7 @@ class fw:
         return ''
 
     def run_keyword(self, name: str, args: list, kwargs: dict):
-        data = dat.DataLoader(self.keywords).get_data(name, *args, **kwargs)
+        data = self.data_loader.get_data(name, *args, **kwargs)
         dat.validate_data(data,
                           mandatory=self.keywords.get_mandatory_fields(name),
                           conditional=self.keywords.get_conditional_fields(name))
