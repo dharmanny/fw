@@ -3,6 +3,8 @@ import fw.core.keyword as kw
 import fw.core.settings as sets
 from pathlib import Path
 import pandas as pd
+import pytest
+
 
 class Helpers:
     def get_loader(self, locs=None):
@@ -12,7 +14,7 @@ class Helpers:
         self.keywords = kw.Keywords()
         self.data_loader = dat.DataLoader(self.keywords)
 
-    def basic_dataframe_test(self, data, length, cols, not_cols=[]):
+    def basic_dataframe_test(self, data, length, cols, not_cols=()):
         assert isinstance(data, pd.DataFrame), 'The returned data is not a valid pandas.DataFrame type'
         assert len(data) == length, 'The lenght of the data was not correct.'
         for col in cols:
@@ -78,15 +80,7 @@ class TestBasics(Helpers):
         assert sets.EVAL_INDICATOR == 'test_eval:', 'The setting was not passed correctly'
 
 
-class TestFaultScenarios(Helpers):
-    def setup_method(self):
-        self.get_loader()
-
-    def test_update_settings_uses_update_settings_def(self):
-        pass
-
-
-class TestEvaluationAndSelection(Helpers):
+class TestEvaluation(Helpers):
     def setup_method(self):
         self.get_loader()
         self.eval = 'ev:'
@@ -125,8 +119,81 @@ class TestEvaluationAndSelection(Helpers):
         self.basic_dataframe_test(data, 1, ['X', 'Y', 'Z'])
         assert data.Z[0] == '1 3abc', 'The cells where not evaluated correctly'
 
-    def test_row_selection(self):
-        col = [1, 2, 3, 4, 5]
+    def test_evaluation_multiple_rows(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_1.csv')
+        a = '{}Z+Y'.format(self.eval)
+        data = self.data_loader.get_data('keyword_1', DATA_FILE=csv, A=a)
+        self.basic_dataframe_test(data, 3, ['X', 'Y', 'Z', 'A'])
+        assert data.A[0] == 5, 'The cells where not evaluated correctly'
+        assert data.A[1] == 11, 'The cells where not evaluated correctly'
+        assert data.A[2] == 17, 'The cells where not evaluated correctly'
+
+
+class TestFiltering(Helpers):
+
+    def setup_method(self):
+        self.get_loader()
+        self.eval = 'ev:'
+        sets.update_settings(EVAL_INDICATOR=self.eval)
+        assert sets.EVAL_INDICATOR == self.eval, 'Setup went wrong'
+
+    def test_row_selection_list(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        data = self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='0, 1, 4')
+        self.basic_dataframe_test(data, 3, ['X', 'Y', 'Z'], ['ROWS'])
+        assert data.index.to_list() == [0, 1, 4], 'Incorrect rows where returned (check was done based on index)'
+
+    def test_row_selection_none(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        data = self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='None')
+        self.basic_dataframe_test(data, 7, ['X', 'Y', 'Z'], ['ROWS'])
+        assert data.index.to_list() == [0, 1, 2, 3, 4, 5, 6], 'Incorrect rows where returned (check was done based ' \
+                                                              'on index)'
+
+    def test_row_selection_all(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        data = self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='All')
+        self.basic_dataframe_test(data, 7, ['X', 'Y', 'Z'], ['ROWS'])
+        assert data.index.to_list() == [0, 1, 2, 3, 4, 5, 6], 'Incorrect rows where returned (check was done based ' \
+                                                              'on index)'
+
+    def test_row_selection_invalid(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        with pytest.raises(ValueError) as excinfo:
+            self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='Invalid_value')
+        assert "The passed row value could not be interpreted " \
+               "as row selection." == str(excinfo.value), 'Incorrect error was raised'
+
+    def test_index_too_high(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        with pytest.raises(ValueError) as excinfo:
+            self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='7')
+        assert 'The resulting rows where not present in the ' \
+               'actual data.' == str(excinfo.value), 'Incorrect error was raised'
+
+    def test_index_partially_too_high(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_2.csv')
+        with pytest.raises(ValueError) as excinfo:
+            self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS='6, 7')
+        assert 'The resulting rows where not present in the ' \
+               'actual data.' == str(excinfo.value), 'Incorrect error was raised'
+
+    def test_with_basic_eval(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_1.csv')
+        rows = '{} X > 3'.format(self.eval)
+        data = self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS=rows)
+        self.basic_dataframe_test(data, 2, ['X', 'Y', 'Z'], ['ROWS'])
+        assert data.index.to_list() == [1, 2], 'Incorrect rows where returned (check was done based on index)'
+
+    def test_with_invalid_row_evaluation(self):
+        csv = Path(*Path(__file__).parts[:-1], 'resources', 'data_tests', 'sample_csv_1.csv')
+        rows = '{} X + 3'.format(self.eval)
+        with pytest.raises(AssertionError) as excinfo:
+            self.data_loader.get_data('keyword_1', DATA_FILE=csv, ROWS=rows)
+        assert "inclusion (True) or exclusion (False)" in str(excinfo.value), 'Incorrect error message was raised'
+
+
+
 
 
 # class AddSettingsTests(ut.TestCase):

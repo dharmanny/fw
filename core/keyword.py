@@ -86,7 +86,3 @@ class Keywords:
                 new[col] = match[0]
                 continue
         return data.rename(columns=new)
-
-
-
-

@@ -10,11 +10,14 @@ import fw.core.settings as sets
 class DataLoader:
     def __init__(self, keywords):
         self._kws = keywords
-        self._add_relevant_settings_to_self()
 
-    def _add_relevant_settings_to_self(self):
-        self._eval_ind = sets.EVAL_INDICATOR
-        self._eval_len = len(self._eval_ind)
+    def _ev_len(self):
+        """Return the latest evaluation indicator length"""
+        return len(sets.EVAL_INDICATOR)
+
+    def _ev(self):
+        """Return the latest evaluation indicator"""
+        return sets.EVAL_INDICATOR
 
     def _add_args_to_kwargs(self, name, args, kwargs):
         if len(args) == 0:
@@ -24,6 +27,8 @@ class DataLoader:
         # identify arguments indicated in the name (e.g. 'do_${arg1}_to_${arg2}') and add to vrs.
         # TODO: find a replacement for \w+
         # vrs.extend([re.findall('\w+', x)[0].lower() for x in re.findall('\${\w+}', name)])
+
+
         try:
             man_vars = self._kws.get_mandatory_fields(name)
             for name_var, man_var in zip(vrs, tuple(man_vars)):
@@ -65,12 +70,20 @@ class DataLoader:
         if rows is None:
             return data
         rows = str(rows)
-        if rows[0:self._eval_len] == self._eval_ind:
-            context = {}
-            fltr = data.apply(lambda r: self._evaluate_cell(rows, r, context), axis=1)
+        if rows[0:self._ev_len()] == self._ev():
+            fltr = data.apply(lambda r: self._evaluate_cell(rows, r, {}), axis=1)
+            assert not any([x not in [True, False] for x in fltr]), 'The rows filter resulted in something other than a ' \
+                                                                'boolean. Row filters evaluation can only be used to ' \
+                                                                'indicate inclusion (True) or exclusion (False) of a ' \
+                                                                'row.'
             data = data[fltr]
-        elif rows is not None or rows.upper() not in ('ALL', 'NONE'):
-            rows_int = [int(x) - 1 for x in rows.split(',')]
+        elif rows is not None and rows.upper() not in ('ALL', 'NONE'):
+            try:
+                rows_int = [int(x) for x in rows.split(',')]
+            except ValueError:
+                raise ValueError('The passed row value could not be interpreted as row selection.')
+            if set(rows_int) - set(data.index) != set():
+                raise ValueError('The resulting rows where not present in the actual data.')
             data = data.loc[rows_int]
         return data
 
@@ -101,7 +114,7 @@ class DataLoader:
     def _eval_needed(self, val):
         if not isinstance(val, str):
             return False
-        if val[0:self._eval_len] != self._eval_ind:
+        if val[0:self._ev_len()] != self._ev():
             return False
         return True
 
@@ -137,7 +150,7 @@ class DataLoader:
     def _evaluate_cell(self, val, row, context):
         if not self._eval_needed(val):
             return val
-        val = val.replace(self._eval_ind, '')
+        val = val.replace(self._ev(), '')
         return self._eval_till_error(val, row, context)
 
     def load_csv(self, filename, **options):
@@ -158,6 +171,8 @@ class DataLoader:
 
         kwargs = self._extract_and_add_settings(kwargs)
         rows = kwargs.get('ROWS')
+        if rows is not None:
+            kwargs.pop('ROWS')
         data, kwargs = self._extract_data(kwargs)
         if data is not None:
             data = data.assign(**kwargs)
@@ -198,62 +213,3 @@ def get_cols(data=None):
         return []
     else:
         raise TypeError('Data is of non-supported type: "{}".'.format(data.__class__))
-
-
-# class DataLibrary:
-#     def __init__(self, fwo):
-#         self._fwo = fwo
-#
-#     def _safe_assign_df(self, data, **kwargs):
-#         edit_cols = tuple(set(data.columns) & set(kwargs.keys()))
-#         new_cols = {col: val for col, val in kwargs.items() if col not in edit_cols}
-#         data = data.assign(**new_cols)
-#
-#         def_spec = self._fwo.fw_settings.DEFAULT_SPECIFIER
-#         for col in edit_cols:
-#             if def_spec in data[col].to_list():
-#                 new_data = data[[col]].assign(**{col: kwargs.get(col)})
-#                 new_list = []
-#                 for old, new in zip(data[col], new_data[col]):
-#                     if old == def_spec:
-#                         new_list.append(new)
-#                     else:
-#                         new_list.append(old)
-#                 data = data.assign(**{col: new_list})
-#         return data
-#
-#     def _safe_assign_series(self, data, **kwargs):
-#         edit_cols = tuple(set(data.index) & set(kwargs.keys()))
-#         new_cols = {col: val for col, val in kwargs.items() if col not in edit_cols}
-#         data = data.append(pd.Series(new_cols))
-#         def_spec = self._fwo.fw_settings.DEFAULT_SPECIFIER
-#         for col in edit_cols:
-#             if def_spec == data[col]:
-#                 data[col] = kwargs.get(col)
-#         return data
-#
-#     def _use_default_data(self, data):
-#         if data is None:
-#             try:
-#                 data = self._fwo.DATA
-#             except AttributeError:
-#                 raise ImportError('No data was passed, and no data was present in the framework object either.')
-#         return data
-#
-#     def safe_assign(self, data=None, **kwargs):
-#         data = self._use_default_data(data)
-#         if isinstance(data, pd.DataFrame):
-#             result = self._safe_assign_df(data, **kwargs)
-#         elif isinstance(data, pd.Series):
-#             result = self._safe_assign_series(data, **kwargs)
-#         elif data is None:
-#             if kwargs != {}:
-#                 result = pd.DataFrame.from_dict(kwargs)
-#             else:
-#                 result = data
-#         else:
-#             raise TypeError('The given type of data - "{}" - is not supported, '
-#                             'only pandas.DataFrames and pandas.Series are supported.'
-#                             .format(data.__class__))
-#         return result
-#
